@@ -17,6 +17,37 @@
 2. Pseudorandomness: the output is indistinguishable from random by anyone not knowing the secret key
 3. Trusted Uniqueness: That requires that, given a public key, a VRF input m corresponding to a unique output for the same input value, result should be unique
 
+# Cryptographic sortition using VRF
+## 1. Calculate Random number from hash(vrf output)
+* Can calculate a random ratio range in [0, 1] from vrf output which is unique for a message, and verifiable for all the others who have issuer's public key and its proof
+* The Ratio can be calculated as follows:
+    * ratio = hash / (2^hashlen)
+* And **its probability is uniformly distributed**
+* N=100
+![Probability mass when N=100](https://github.com/yoseplee/vrf-go/blob/master/visualize/probabilityMass(n=100).png?raw=true)
+* N=500
+![Probability mass when N=500](https://github.com/yoseplee/vrf-go/blob/master/visualize/probabilityMass(n=500).png?raw=true)
+* N=1000
+![Probability mass when N=1000](https://github.com/yoseplee/vrf-go/blob/master/visualize/probabilityMass(n=1000).png?raw=true)
+* N=5000
+![Probability mass when N=1500](https://github.com/yoseplee/vrf-go/blob/master/visualize/probabilityMass(n=1500).png?raw=true)
+* N=10000
+![Probability mass when N=10000](https://github.com/yoseplee/vrf-go/blob/master/visualize/probabilityMass(n=10000).png?raw=true)
+* N=15000
+![Probability mass when N=150000](https://github.com/yoseplee/vrf-go/blob/master/visualize/probabilityMass(n=150000).png?raw=true)
+
+## 2. Implement cryptographic sortition
+* Now we can implement a cryptographic sortition using VRF by setting a threshold or range which can represents selection by itself
+* Example
+    * let's say we have set range [0, 0.1] and any ratios which value is in it means the selected one
+    * Peer 'A' calaulated ratio and its value is 0.03
+    * Then 'A' can claim that he/she is selected and can verify it by providing the proof
+    * Peer 'B' calcuated ratio and its value is 0.5
+    * Then 'B' can not claim that he/she is selected as its value is out of range [0, 0.1]
+
+## 3. Result
+TBU
+
 # Possible Implementations
 1. ed25519
     * [r2ishiguro: go](https://github.com/r2ishiguro/vrf/tree/master/go/vrf_ed25519)
