@@ -3,9 +3,12 @@ package vrf
 import (
 	"bytes"
 	"crypto/ed25519"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"log"
+	"math"
+	"math/rand"
 	"testing"
 
 	"github.com/r2ishiguro/vrf/go/vrf_ed25519"
@@ -77,17 +80,84 @@ func TestVrfProofToVerify(t *testing.T) {
 	}
 }
 
-func TestGetRatio(t *testing.T) {
+func TestGetRatioForSinglePrivateKey(t *testing.T) {
 	mesasge := "hello go test"
+	privateKey := getKeyFromGivenSeed()
+	publicKey := privateKey.Public().(ed25519.PublicKey)
+
+	want := 0.3044079188621445 //for the input message: "hello go test"
+	for i := 0; i < 10; i++ {
+		val := vrf_ed25519.ECVRF_hash_to_curve([]byte(mesasge), publicKey)
+		var vrfOutput [32]byte
+		val.ToBytes(&vrfOutput)
+		got := GetRatio(vrfOutput[:])
+		if want != got {
+			panic("inconsistent ratio for the same key found")
+		}
+	}
+}
+
+func TestDistributionOfGetRatio(t *testing.T) {
+	privateKey := getKeyFromGivenSeed()
+	publicKey := privateKey.Public().(ed25519.PublicKey)
+
+	var ratios []float64
+	for i := 0; i < 100; i++ {
+		message := sha256.Sum256([]byte(fmt.Sprintf("%d", rand.Intn(100))))
+		vrfOutput := vrf_ed25519.ECVRF_hash_to_curve([]byte(message[:]), publicKey)
+		var vrfOutputInBytes [32]byte
+		vrfOutput.ToBytes(&vrfOutputInBytes)
+		got := GetRatio(vrfOutputInBytes[:])
+		ratios = append(ratios, got)
+	}
+	// fmt.Println("average is ", getAverage(ratios))
+}
+
+func getAverage(data []float64) float64 {
+	var average float64
+	for _, entity := range data {
+		average += entity
+	}
+	average /= float64(len(data))
+	return average
+}
+
+func getVariance(data []float64) float64 {
+	var variance float64
+	average := getAverage(data)
+	for _, entity := range data {
+		powDev := math.Pow((average - entity), 2)
+		variance += powDev
+	}
+	variance /= float64(len(data))
+	return variance
+}
+
+func TestBasicStatistics(t *testing.T) {
+	data := [5]float64{
+		1.0, 3.0, 5.0, 7.0, 9.0,
+	}
+	want := 5.0
+	got := getAverage(data[:])
+
+	if want != got {
+		panic("incorrect calculation of average in given dataset")
+	}
+
+	want = 8.0
+	got = getVariance(data[:])
+
+	if want != got {
+		panic("incorrect calculation of variance in given dataset")
+	}
+
+}
+
+func getKeyFromGivenSeed() ed25519.PrivateKey {
 	givenSeedInBytes, err := hex.DecodeString(givenSeed)
 	if err != nil {
 		panic("failed to decode string to hex")
 	}
 	privateKey := ed25519.NewKeyFromSeed(givenSeedInBytes)
-	publicKey := privateKey.Public().(ed25519.PublicKey)
-
-	val := vrf_ed25519.ECVRF_hash_to_curve([]byte(mesasge), publicKey)
-	var vrfOutput [32]byte
-	val.ToBytes(&vrfOutput)
-	GetRatio(vrfOutput[:])
+	return privateKey
 }

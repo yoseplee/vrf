@@ -1,15 +1,14 @@
 package vrf
 
 import (
-	"fmt"
 	"log"
 	"math/big"
 )
 
-func GetRatio(vrfOutput []byte) {
+func GetRatio(vrfOutput []byte) float64 {
 	t := &big.Int{}
 	t.SetBytes(vrfOutput[:])
-	fmt.Println("converted to int ", t)
+	// fmt.Println("converted to int ", t)
 
 	precision := uint(8 * (len(vrfOutput) + 1))
 	max, b, err := big.ParseFloat("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 0, precision, big.ToNearestEven)
@@ -23,7 +22,8 @@ func GetRatio(vrfOutput []byte) {
 
 	ratio := big.Float{}
 	cratio, _ := ratio.Quo(&h, max).Float64()
-	hval, _ := h.Float64()
-	fmt.Println("h ", hval)
-	fmt.Println("ratio: ", cratio)
+	// hval, _ := h.Float64()
+	// fmt.Println("h ", hval)
+	// fmt.Println("ratio: ", cratio)
+	return cratio
 }
