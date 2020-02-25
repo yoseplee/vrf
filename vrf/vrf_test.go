@@ -14,13 +14,16 @@ import (
 const givenSeed string = "064e1cee5e9a1032691741b8d8f7a43c32ef81185a5d46ea0a1aa4accc9d24f4"
 
 func TestGetSeed(t *testing.T) {
-	_, secretKey, err := ed25519.GenerateKey(nil)
+	givenSeedInBytes, err := hex.DecodeString(givenSeed)
 	if err != nil {
-		panic("failed to generate a new key pair")
+		panic("failed to convert string to hex")
 	}
-	seed := secretKey.Seed()
-	fmt.Println(seed)
-	fmt.Printf("%x\n", seed)
+
+	privateKey := ed25519.NewKeyFromSeed(givenSeedInBytes)
+	seed := privateKey.Seed()
+	if !bytes.Equal(seed, givenSeedInBytes) {
+		panic("seed test failed: it is different from given seed")
+	}
 }
 
 func TestKeyGenerationFromGivenSeed(t *testing.T) {
@@ -28,66 +31,63 @@ func TestKeyGenerationFromGivenSeed(t *testing.T) {
 	if err != nil {
 		panic("error during the key generation")
 	}
-	// seed, err := hex.DecodeString(string(wantPrivateKey.Seed()))
 	seed := wantPrivateKey.Seed()
 	if err != nil {
 		panic("error during the seed decoding into hex")
 	}
-	gotPrivateKey := ed25519.NewKeyFromSeed(seed)
-	gotPublicKey := []byte(fmt.Sprintf("%v", gotPrivateKey.Public()))
 
-	if bytes.Compare(wantPublicKey, gotPublicKey) == 1 || bytes.Compare(wantPrivateKey, gotPrivateKey) == 1 {
-		fmt.Printf("wantPublicKey: %v\n", wantPublicKey)
-		fmt.Printf("gotPublicKey: %v\n", gotPublicKey)
+	gotPrivateKey := ed25519.NewKeyFromSeed(seed)
+	gotPublicKey := gotPrivateKey.Public().(ed25519.PublicKey)
+
+	if !bytes.Equal(wantPrivateKey, gotPrivateKey) {
 		fmt.Printf("wantPrivateKey: %v\n", wantPrivateKey)
 		fmt.Printf("gotPrivateKey: %v\n", gotPrivateKey)
 		panic("key generated from the seed is not identical from the original")
 	}
 
-}
+	if !bytes.Equal(wantPublicKey, gotPublicKey) {
+		fmt.Printf("wantPublicKey: %v\n", wantPublicKey)
+		fmt.Printf("gotPublicKey: %v\n", gotPublicKey)
+		panic("key generated from the seed is not identical from the original")
+	}
 
-func TestKeyGenerationBySeed(t *testing.T) {
-	givenSeedInByteArray, _ := hex.DecodeString(givenSeed)
-	privateKey := ed25519.NewKeyFromSeed(givenSeedInByteArray)
-	publicKey := []byte(fmt.Sprintf("%v", privateKey.Public()))
-	val := vrf_ed25519.ECVRF_hash_to_curve([]byte("message"), publicKey)
-	fmt.Println(val)
 }
 
 func TestVrfProofToVerify(t *testing.T) {
 	const message = "m"
-	publicKey, secretKey, err := ed25519.GenerateKey(nil)
+	publicKey, privateKey, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		log.Fatalf("error during the key generation | %s\n", err)
 	}
-	fmt.Printf("skey %x\n", secretKey)
 
 	val := vrf_ed25519.ECVRF_hash_to_curve([]byte(message), publicKey)
-	fmt.Printf("hash: %x\n", val)
+
 	var hashToBytes [32]byte
 	val.ToBytes(&hashToBytes)
-	fmt.Printf("hash: %x\n", hashToBytes)
 
-	proof, err := vrf_ed25519.ECVRF_prove(publicKey, secretKey, []byte(message))
+	proof, err := vrf_ed25519.ECVRF_prove(publicKey, privateKey, []byte(message))
 	if err != nil {
 		log.Fatalf("error during the calculating proof | %s\n", err)
 	}
-	fmt.Println("proof: ", proof)
 
-	verifyResult, err := vrf_ed25519.ECVRF_verify(publicKey, proof, []byte(message))
-	if err != nil {
+	wantResult := true
+
+	if verifyResult, err := vrf_ed25519.ECVRF_verify(publicKey, proof, []byte(message)); verifyResult != wantResult || err != nil {
 		log.Fatalf("error during the verify | %s\n", err)
 	}
-	fmt.Println("Result: ", verifyResult)
 }
 
-/*
 func TestGetRatio(t *testing.T) {
 	mesasge := "hello go test"
-	var privateKey ed25519.PrivateKey
-	var publicKey ed25519.PublicKey
-	privateKey = []byte(givenPrivateKey)
-	publicKey = []byte(privateKey.Public())
-	val := vrf_ed25519.ECVRF_hash_to_curve([]byte(message), publicKey)
+	givenSeedInBytes, err := hex.DecodeString(givenSeed)
+	if err != nil {
+		panic("failed to decode string to hex")
+	}
+	privateKey := ed25519.NewKeyFromSeed(givenSeedInBytes)
+	publicKey := privateKey.Public().(ed25519.PublicKey)
+
+	val := vrf_ed25519.ECVRF_hash_to_curve([]byte(mesasge), publicKey)
+	var vrfOutput [32]byte
+	val.ToBytes(&vrfOutput)
+	GetRatio(vrfOutput[:])
 }
-*/
