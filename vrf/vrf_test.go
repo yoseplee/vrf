@@ -102,15 +102,16 @@ func TestDistributionOfGetRatio(t *testing.T) {
 	publicKey := privateKey.Public().(ed25519.PublicKey)
 
 	var ratios []float64
-	for i := 0; i < 100; i++ {
-		message := sha256.Sum256([]byte(fmt.Sprintf("%d", rand.Intn(100))))
+	for i := 0; i < 1000; i++ {
+		message := sha256.Sum256([]byte(fmt.Sprintf("%d", rand.Int())))
 		vrfOutput := vrf_ed25519.ECVRF_hash_to_curve([]byte(message[:]), publicKey)
 		var vrfOutputInBytes [32]byte
 		vrfOutput.ToBytes(&vrfOutputInBytes)
 		got := GetRatio(vrfOutputInBytes[:])
 		ratios = append(ratios, got)
 	}
-	// fmt.Println("average is ", getAverage(ratios))
+	fmt.Println("average is ", getAverage(ratios))
+	fmt.Println("variance is ", getVariance(ratios))
 }
 
 func getAverage(data []float64) float64 {

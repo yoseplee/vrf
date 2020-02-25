@@ -5,6 +5,7 @@ import (
 	"math/big"
 )
 
+//GetRatio calculates a random value in range [0, 1] using vrf hash output
 func GetRatio(vrfOutput []byte) float64 {
 	t := &big.Int{}
 	t.SetBytes(vrfOutput[:])
