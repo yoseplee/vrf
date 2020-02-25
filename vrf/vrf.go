@@ -2,6 +2,7 @@ package vrf
 
 import (
 	"log"
+	"math"
 	"math/big"
 )
 
@@ -27,4 +28,26 @@ func GetRatio(vrfOutput []byte) float64 {
 	// fmt.Println("h ", hval)
 	// fmt.Println("ratio: ", cratio)
 	return cratio
+}
+
+//GetAverage calculates average of given dataset
+func GetAverage(data []float64) float64 {
+	var average float64
+	for _, entity := range data {
+		average += entity
+	}
+	average /= float64(len(data))
+	return average
+}
+
+//GetVariance calculates variance of given dataset
+func GetVariance(data []float64) float64 {
+	var variance float64
+	average := GetAverage(data)
+	for _, entity := range data {
+		powDev := math.Pow((average - entity), 2)
+		variance += powDev
+	}
+	variance /= float64(len(data))
+	return variance
 }

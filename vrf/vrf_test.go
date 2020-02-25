@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
-	"math"
 	"math/rand"
 	"testing"
 
@@ -110,28 +109,8 @@ func TestDistributionOfGetRatio(t *testing.T) {
 		got := GetRatio(vrfOutputInBytes[:])
 		ratios = append(ratios, got)
 	}
-	fmt.Println("average is ", getAverage(ratios))
-	fmt.Println("variance is ", getVariance(ratios))
-}
-
-func getAverage(data []float64) float64 {
-	var average float64
-	for _, entity := range data {
-		average += entity
-	}
-	average /= float64(len(data))
-	return average
-}
-
-func getVariance(data []float64) float64 {
-	var variance float64
-	average := getAverage(data)
-	for _, entity := range data {
-		powDev := math.Pow((average - entity), 2)
-		variance += powDev
-	}
-	variance /= float64(len(data))
-	return variance
+	fmt.Println("average is ", GetAverage(ratios))
+	fmt.Println("variance is ", GetVariance(ratios))
 }
 
 func TestBasicStatistics(t *testing.T) {
@@ -139,14 +118,14 @@ func TestBasicStatistics(t *testing.T) {
 		1.0, 3.0, 5.0, 7.0, 9.0,
 	}
 	want := 5.0
-	got := getAverage(data[:])
+	got := GetAverage(data[:])
 
 	if want != got {
 		panic("incorrect calculation of average in given dataset")
 	}
 
 	want = 8.0
-	got = getVariance(data[:])
+	got = GetVariance(data[:])
 
 	if want != got {
 		panic("incorrect calculation of variance in given dataset")
