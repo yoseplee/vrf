@@ -23,6 +23,7 @@
 * The Ratio can be calculated as follows:
     * ratio = hash / (2^hashlen)
 * And **its probability is uniformly distributed**
+> To calculate the result by yourself, just run the main function. It's ready for you! e.g. $go run .
 * N=100
 ![Probability mass when N=100](https://github.com/yoseplee/vrf-go/blob/master/visualize/probabilityMass(n=100).png?raw=true)
 * N=500
