@@ -47,7 +47,15 @@
     * Then 'B' can not claim that he/she is selected as its value is out of range [0, 0.1]
 
 ## 3. Result
-TBU
+* In the code written in sortition, the threshold is set for 0.3, which means that only participants who got the value under 0.3 will selected for sortition of this term
+* To execute experiment to see if its expected rate of selection, test code is ready for run sortition for 1000 times and count the ratio of success
+```sh
+# at the root directory of the project
+cd sortition/
+go test
+```
+* As the random variable from vrf hash value is from the uniform distribution, expected ratio of success will be almost the same as the threshold
+* if you are very lucky, you would see fail as this is probability case.
 
 # Possible Implementations
 1. ed25519
