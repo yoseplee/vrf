@@ -6,7 +6,7 @@ import (
 	"math/big"
 )
 
-//GetRatio calculates a random value in range [0, 1] using vrf hash output
+//GetRatio calculates a random value in range [0, 1] using vrf hash output. Now it is a copy from algorand's code see https://github.com/algorand/go-algorand/blob/87aecab84df1656972e7485cb1e706417bbb8ac7/data/committee/sortition/sortition.go
 func GetRatio(vrfOutput []byte) float64 {
 	t := &big.Int{}
 	t.SetBytes(vrfOutput[:])
