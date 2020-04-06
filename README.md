@@ -38,6 +38,7 @@
 ![Probability mass when N=150000](https://github.com/yoseplee/vrf-go/blob/master/visualize/probabilityMass(n=150000).png?raw=true)
 
 ## 2. Implement cryptographic sortition
+![an overview of simple cryptographic sortition](https://github.com/yoseplee/vrf-go/blob/master/simple-sortition-overview.png?raw=true)
 * Now we can implement a cryptographic sortition using VRF by setting a threshold or range which can represents selection by itself
 * Example
     * let's say we have set range [0, 0.1] and any ratios which value is in it means the selected one
