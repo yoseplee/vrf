@@ -53,6 +53,6 @@ func TestSortition(t *testing.T) {
 	}
 	rateOfSuccess := float64(success) / float64(totalIteration)
 	if !(rateOfSuccess > sortitionThreshold-0.05 && rateOfSuccess < sortitionThreshold+0.05) {
-		log.Fatal("out of bound: success rate fails")
+		log.Fatalf("out of bound: success rate fails\nrate of success: %f\nleft bound: %f\nright bound: %f\n", rateOfSuccess, sortitionThreshold-0.05, sortitionThreshold+0.05)
 	}
 }
