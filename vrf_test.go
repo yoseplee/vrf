@@ -42,7 +42,7 @@ func TestGeScalarMult(t *testing.T) {
 	}
 	c := hashToCurve([]byte(message), pk)
 	x := expandSecret(sk)
-	h1 := GeScalarMult(c, x)
+	h1 := geScalarMult(c, x)
 	h1.ToBytes(&res1)
 	// copy c to h2
 	var h2, h3 ed2.ExtendedGroupElement
@@ -53,7 +53,7 @@ func TestGeScalarMult(t *testing.T) {
 	h3.ToBytes(&res2)
 
 	if !bytes.Equal(res1[:], res2[:]) {
-		t.Errorf("GeScalarMult mismatch:\n%s\n%s\nx=\n%s\n", hex.Dump(res1[:]), hex.Dump(res2[:]), hex.Dump(x[:]))
+		t.Errorf("geScalarMult mismatch:\n%s\n%s\nx=\n%s\n", hex.Dump(res1[:]), hex.Dump(res2[:]), hex.Dump(x[:]))
 	}
 }
 
@@ -79,10 +79,10 @@ func TestGeAdd(t *testing.T) {
 	ed2.GeAdd(&h1, &h1, &h2)
 	h1.ToBytes(&res1)
 
-	h3 := GeAdd(GeScalarMult(c1, a1), GeScalarMult(c1, a2))
+	h3 := geAdd(geScalarMult(c1, a1), geScalarMult(c1, a2))
 	h3.ToBytes(&res2)
 	if !bytes.Equal(res1[:], res2[:]) {
-		t.Errorf("GeAdd mismatch: %x, %x", a1[:], a2[:])
+		t.Errorf("geAdd mismatch: %x, %x", a1[:], a2[:])
 	}
 }
 
@@ -95,12 +95,12 @@ var extendedBaseEl = ed1.ExtendedGroupElement{
 
 func TestG(t *testing.T) {
 	var res1, res2 [32]byte
-	g := G()
+	g := ge()
 	g.ToBytes(&res1)
 	extendedBaseEl.ToBytes(&res2)
 
 	if !bytes.Equal(res1[:], res2[:]) {
-		t.Errorf("G mismatch")
+		t.Errorf("ge mismatch")
 	}
 }
 
@@ -130,11 +130,11 @@ func TestArith(t *testing.T) {
 		}
 	}
 
-	x := I2OSP(big.NewInt(1), N2)
-	k := I2OSP(big.NewInt(4), N2)
+	x := i2OSP(big.NewInt(1), N2)
+	k := i2OSP(big.NewInt(4), N2)
 	var z big.Int
-	s := z.Mod(z.Sub(OS2IP(k), z.Mul(OS2IP(c[:]), OS2IP(x))), q)
-	ss := I2OSP(s, N2)
+	s := z.Mod(z.Sub(os2IP(k), z.Mul(os2IP(c[:]), os2IP(x))), q)
+	ss := i2OSP(s, N2)
 	s1 := toLittle(ss)
 
 	var s2, minusC2 [32]byte
@@ -175,12 +175,12 @@ func DoTestECVRF(t *testing.T, pk, sk []byte, msg []byte, verbose bool) {
 		}
 		// u = (g^x)^c * g^s = P^c * g^s
 		var u ed1.ProjectiveGroupElement
-		P := OS2ECP(pk, pk[31]>>7)
+		P := os2ECP(pk, pk[31]>>7)
 		ed1.GeDoubleScalarMultVartime(&u, c, P, s)
-		fmt.Printf("r: %s\n", hex.EncodeToString(ECP2OS(r)))
+		fmt.Printf("r: %s\n", hex.EncodeToString(ecp2OS(r)))
 		fmt.Printf("c: %s\n", hex.EncodeToString(c[:]))
 		fmt.Printf("s: %s\n", hex.EncodeToString(s[:]))
-		fmt.Printf("u: %s\n", hex.EncodeToString(ECP2OSProj(&u)))
+		fmt.Printf("u: %s\n", hex.EncodeToString(ecp2OSProj(&u)))
 	}
 }
 
@@ -212,7 +212,7 @@ func TestECVRFOnce(t *testing.T) {
 	DoTestECVRF(t, pk, sk, m, true)
 
 	h := hashToCurve(m, pk)
-	fmt.Printf("h: %s\n", hex.EncodeToString(ECP2OS(h)))
+	fmt.Printf("h: %s\n", hex.EncodeToString(ecp2OS(h)))
 }
 
 func TestHashToCurve(t *testing.T) {
@@ -223,10 +223,10 @@ func TestHashToCurve(t *testing.T) {
 		P := hashToCurve(m[:], pk)
 		// test P on curve by P^order = infinity
 		var infs [32]byte
-		inf := GeScalarMult(P, IP2F(q))
+		inf := geScalarMult(P, ip2F(q))
 		inf.ToBytes(&infs)
 		if infs != [32]byte{1} {
-			t.Fatalf("OS2ECP: not valid curve")
+			t.Fatalf("os2ECP: not valid curve")
 		}
 	}
 }

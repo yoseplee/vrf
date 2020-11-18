@@ -42,7 +42,7 @@ var (
 	ErrDecodeError    = errors.New("ECVRF: decode error")
 	ErrInternalError  = errors.New("ECVRF: internal error")
 	q, _              = new(big.Int).SetString(qs, 16)
-	g                 = G()
+	g                 = ge()
 )
 
 const (
@@ -58,7 +58,7 @@ const (
 func Prove(pk []byte, sk []byte, m []byte) (pi, hash []byte, err error) {
 	x := expandSecret(sk)
 	h := hashToCurve(m, pk)
-	r := ECP2OS(GeScalarMult(h, x))
+	r := ecp2OS(geScalarMult(h, x))
 
 	kp, ks, err := ed25519.GenerateKey(nil) // use GenerateKey to generate a random
 	if err != nil {
@@ -67,17 +67,17 @@ func Prove(pk []byte, sk []byte, m []byte) (pi, hash []byte, err error) {
 	k := expandSecret(ks)
 
 	// hashPoints(g, h, g^x, h^x, g^k, h^k)
-	c := hashPoints(ECP2OS(g), ECP2OS(h), S2OS(pk), r, S2OS(kp), ECP2OS(GeScalarMult(h, k)))
+	c := hashPoints(ecp2OS(g), ecp2OS(h), s2OS(pk), r, s2OS(kp), ecp2OS(geScalarMult(h, k)))
 
 	// s = k - c*x mod q
 	var z big.Int
-	s := z.Mod(z.Sub(F2IP(k), z.Mul(c, F2IP(x))), q)
+	s := z.Mod(z.Sub(f2IP(k), z.Mul(c, f2IP(x))), q)
 
-	// pi = gamma || I2OSP(c, N) || I2OSP(s, 2N)
+	// pi = gamma || i2OSP(c, N) || i2OSP(s, 2N)
 	var buf bytes.Buffer
 	buf.Write(r) // 2N
-	buf.Write(I2OSP(c, N))
-	buf.Write(I2OSP(s, N2))
+	buf.Write(i2OSP(c, N))
+	buf.Write(i2OSP(s, N2))
 	pi = buf.Bytes()
 	return pi, Hash(pi), nil
 }
@@ -94,7 +94,7 @@ func Verify(pk []byte, pi []byte, m []byte) (bool, error) {
 
 	// u = (g^x)^c * g^s = P^c * g^s
 	var u edwards25519.ProjectiveGroupElement
-	P := OS2ECP(pk, pk[31]>>7)
+	P := os2ECP(pk, pk[31]>>7)
 	if P == nil {
 		return false, ErrMalformedInput
 	}
@@ -103,13 +103,13 @@ func Verify(pk []byte, pi []byte, m []byte) (bool, error) {
 	h := hashToCurve(m, pk)
 
 	// v = gamma^c * h^s
-	//	fmt.Printf("c, r, s, h\n%s%s%s%s\n", hex.Dump(c[:]), hex.Dump(ECP2OS(r)), hex.Dump(s[:]), hex.Dump(ECP2OS(h)))
-	v := GeAdd(GeScalarMult(r, c), GeScalarMult(h, s))
+	//	fmt.Printf("c, r, s, h\n%s%s%s%s\n", hex.Dump(c[:]), hex.Dump(ecp2OS(r)), hex.Dump(s[:]), hex.Dump(ecp2OS(h)))
+	v := geAdd(geScalarMult(r, c), geScalarMult(h, s))
 
 	// c' = hashPoints(g, h, g^x, gamma, u, v)
-	c2 := hashPoints(ECP2OS(g), ECP2OS(h), S2OS(pk), ECP2OS(r), ECP2OSProj(&u), ECP2OS(v))
+	c2 := hashPoints(ecp2OS(g), ecp2OS(h), s2OS(pk), ecp2OS(r), ecp2OSProj(&u), ecp2OS(v))
 
-	return c2.Cmp(F2IP(c)) == 0, nil
+	return c2.Cmp(f2IP(c)) == 0, nil
 }
 
 func decodeProof(pi []byte) (r *edwards25519.ExtendedGroupElement, c *[N2]byte, s *[N2]byte, err error) {
@@ -119,7 +119,7 @@ func decodeProof(pi []byte) (r *edwards25519.ExtendedGroupElement, c *[N2]byte, 
 	if sign != 2 && sign != 3 {
 		return nil, nil, nil, ErrDecodeError
 	}
-	r = OS2ECP(pi[i:i+N2], sign-2)
+	r = os2ECP(pi[i:i+N2], sign-2)
 	i += N2
 	if r == nil {
 		return nil, nil, nil, ErrDecodeError
@@ -149,22 +149,22 @@ func hashPoints(ps ...[]byte) *big.Int {
 		//		fmt.Printf("%s\n", hex.Dump(p))
 	}
 	v := h.Sum(nil)
-	return OS2IP(v[:N])
+	return os2IP(v[:N])
 }
 
 func hashToCurve(m []byte, pk []byte) *edwards25519.ExtendedGroupElement {
 	hash := sha256.New()
 	for i := int64(0); i < limit; i++ {
-		ctr := I2OSP(big.NewInt(i), 4)
+		ctr := i2OSP(big.NewInt(i), 4)
 		hash.Write(m)
 		hash.Write(pk)
 		hash.Write(ctr)
 		h := hash.Sum(nil)
 		hash.Reset()
-		if P := OS2ECP(h, NOSIGN); P != nil {
+		if P := os2ECP(h, NOSIGN); P != nil {
 			// assume cofactor is 2^n
 			for j := 1; j < cofactor; j *= 2 {
-				P = GeDouble(P)
+				P = geDouble(P)
 			}
 			return P
 		}
@@ -172,7 +172,7 @@ func hashToCurve(m []byte, pk []byte) *edwards25519.ExtendedGroupElement {
 	panic("hashToCurve: couldn't make a point on curve")
 }
 
-func OS2ECP(os []byte, sign byte) *edwards25519.ExtendedGroupElement {
+func os2ECP(os []byte, sign byte) *edwards25519.ExtendedGroupElement {
 	P := new(edwards25519.ExtendedGroupElement)
 	var buf [32]byte
 	copy(buf[:], os)
@@ -186,26 +186,26 @@ func OS2ECP(os []byte, sign byte) *edwards25519.ExtendedGroupElement {
 }
 
 // just prepend the sign octet
-func S2OS(s []byte) []byte {
+func s2OS(s []byte) []byte {
 	sign := s[31] >> 7     // @@ we should clear the sign bit??
 	os := []byte{sign + 2} // Y = 0x02 if positive or 0x03 if negative
 	os = append([]byte(os), s...)
 	return os
 }
 
-func ECP2OS(P *edwards25519.ExtendedGroupElement) []byte {
+func ecp2OS(P *edwards25519.ExtendedGroupElement) []byte {
 	var s [32]byte
 	P.ToBytes(&s)
-	return S2OS(s[:])
+	return s2OS(s[:])
 }
 
-func ECP2OSProj(P *edwards25519.ProjectiveGroupElement) []byte {
+func ecp2OSProj(P *edwards25519.ProjectiveGroupElement) []byte {
 	var s [32]byte
 	P.ToBytes(&s)
-	return S2OS(s[:])
+	return s2OS(s[:])
 }
 
-func I2OSP(b *big.Int, n int) []byte {
+func i2OSP(b *big.Int, n int) []byte {
 	os := b.Bytes()
 	if n > len(os) {
 		var buf bytes.Buffer
@@ -217,20 +217,20 @@ func I2OSP(b *big.Int, n int) []byte {
 	}
 }
 
-func OS2IP(os []byte) *big.Int {
+func os2IP(os []byte) *big.Int {
 	return new(big.Int).SetBytes(os)
 }
 
 // convert a field number (in LittleEndian) to a big int
-func F2IP(f *[32]byte) *big.Int {
+func f2IP(f *[32]byte) *big.Int {
 	var t [32]byte
 	for i := 0; i < 32; i++ {
 		t[32-i-1] = f[i]
 	}
-	return OS2IP(t[:])
+	return os2IP(t[:])
 }
 
-func IP2F(b *big.Int) *[32]byte {
+func ip2F(b *big.Int) *[32]byte {
 	os := b.Bytes()
 	r := new([32]byte)
 	j := len(os) - 1
@@ -241,7 +241,7 @@ func IP2F(b *big.Int) *[32]byte {
 	return r
 }
 
-func G() *edwards25519.ExtendedGroupElement {
+func ge() *edwards25519.ExtendedGroupElement {
 	g := new(edwards25519.ExtendedGroupElement)
 	var f edwards25519.FieldElement
 	edwards25519.FeOne(&f)
@@ -274,19 +274,19 @@ var d2 = edwards25519.FieldElement{
 	-21827239, -5839606, -30745221, 13898782, 229458, 15978800, -12551817, -6495438, 29715968, 9444199,
 }
 
-func ToCached(r *CachedGroupElement, p *edwards25519.ExtendedGroupElement) {
+func toCached(r *CachedGroupElement, p *edwards25519.ExtendedGroupElement) {
 	edwards25519.FeAdd(&r.yPlusX, &p.Y, &p.X)
 	edwards25519.FeSub(&r.yMinusX, &p.Y, &p.X)
 	edwards25519.FeCopy(&r.Z, &p.Z)
 	edwards25519.FeMul(&r.T2d, &p.T, &d2)
 }
 
-func GeAdd(p, qe *edwards25519.ExtendedGroupElement) *edwards25519.ExtendedGroupElement {
+func geAdd(p, qe *edwards25519.ExtendedGroupElement) *edwards25519.ExtendedGroupElement {
 	var q CachedGroupElement
 	var r edwards25519.CompletedGroupElement
 	var t0 edwards25519.FieldElement
 
-	ToCached(&q, qe)
+	toCached(&q, qe)
 
 	edwards25519.FeAdd(&r.X, &p.Y, &p.X)
 	edwards25519.FeSub(&r.Y, &p.Y, &p.X)
@@ -305,7 +305,7 @@ func GeAdd(p, qe *edwards25519.ExtendedGroupElement) *edwards25519.ExtendedGroup
 	return re
 }
 
-func GeDouble(p *edwards25519.ExtendedGroupElement) *edwards25519.ExtendedGroupElement {
+func geDouble(p *edwards25519.ExtendedGroupElement) *edwards25519.ExtendedGroupElement {
 	var q edwards25519.ProjectiveGroupElement
 	p.ToProjective(&q)
 	var rc edwards25519.CompletedGroupElement
@@ -315,22 +315,22 @@ func GeDouble(p *edwards25519.ExtendedGroupElement) *edwards25519.ExtendedGroupE
 	return r
 }
 
-func ExtendedGroupElementCMove(t, u *edwards25519.ExtendedGroupElement, b int32) {
+func extendedGroupElementCMove(t, u *edwards25519.ExtendedGroupElement, b int32) {
 	edwards25519.FeCMove(&t.X, &u.X, b)
 	edwards25519.FeCMove(&t.Y, &u.Y, b)
 	edwards25519.FeCMove(&t.Z, &u.Z, b)
 	edwards25519.FeCMove(&t.T, &u.T, b)
 }
 
-func GeScalarMult(h *edwards25519.ExtendedGroupElement, a *[32]byte) *edwards25519.ExtendedGroupElement {
+func geScalarMult(h *edwards25519.ExtendedGroupElement, a *[32]byte) *edwards25519.ExtendedGroupElement {
 	q := new(edwards25519.ExtendedGroupElement)
 	q.Zero()
 	p := h
 	for i := uint(0); i < 256; i++ {
 		bit := int32(a[i>>3]>>(i&7)) & 1
-		t := GeAdd(q, p)
-		ExtendedGroupElementCMove(q, t, bit)
-		p = GeDouble(p)
+		t := geAdd(q, p)
+		extendedGroupElementCMove(q, t, bit)
+		p = geDouble(p)
 	}
 	return q
 }
