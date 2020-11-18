@@ -149,7 +149,7 @@ func TestArith(t *testing.T) {
 }
 
 func DoTestECVRF(t *testing.T, pk, sk []byte, msg []byte, verbose bool) {
-	pi, err := Prove(pk, sk, msg[:])
+	pi, _, err := Prove(pk, sk, msg[:])
 	if err != nil {
 		t.Fatal(err)
 	}
