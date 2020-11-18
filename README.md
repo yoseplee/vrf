@@ -7,7 +7,7 @@ In this repository, I modified it because 1) it was far away from go convention(
 
 So, here's the change log. 1) all the function names changed to be carmelCase instead of snake_case. 2) all the functions became private except Prove(), Hash(), Verify(). 3) Prove() function now returns not only proof(pi) but also vrf output so that users can easily use them without calling Hash() function.
 
-In addition, I made a simple selection mechanism(can be called a kind of cryptographic sortition). This may help you to understand how to use vrf output. For more details, [click here]().
+In addition, I made a simple selection mechanism(can be called a kind of cryptographic sortition). This may help you to understand how to use vrf output. For more details, [click here](https://github.com/yoseplee/vrf#3-a-simple-selection-mechanism).
 
 Any kind of contribution will be welcomed. Thanks! 
 
