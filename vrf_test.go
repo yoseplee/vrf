@@ -40,7 +40,7 @@ func TestGeScalarMult(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := ECVRF_hash_to_curve([]byte(message), pk)
+	c := hashToCurve([]byte(message), pk)
 	x := expandSecret(sk)
 	h1 := GeScalarMult(c, x)
 	h1.ToBytes(&res1)
@@ -63,7 +63,7 @@ func TestGeAdd(t *testing.T) {
 	var res1, res2, tmp [32]byte
 
 	io.ReadFull(rand.Reader, tmp[:])
-	c1 := ECVRF_hash_to_curve([]byte(message), tmp[:])
+	c1 := hashToCurve([]byte(message), tmp[:])
 
 	io.ReadFull(rand.Reader, tmp[:])
 	a1 := expandSecret(tmp[:])
@@ -149,11 +149,11 @@ func TestArith(t *testing.T) {
 }
 
 func DoTestECVRF(t *testing.T, pk, sk []byte, msg []byte, verbose bool) {
-	pi, err := ECVRF_prove(pk, sk, msg[:])
+	pi, err := Prove(pk, sk, msg[:])
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := ECVRF_verify(pk, pi, msg[:])
+	res, err := Verify(pk, pi, msg[:])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,9 +167,9 @@ func DoTestECVRF(t *testing.T, pk, sk []byte, msg []byte, verbose bool) {
 		fmt.Printf("x: %s\n", hex.EncodeToString(sk))
 		fmt.Printf("P: %s\n", hex.EncodeToString(pk))
 		fmt.Printf("pi: %s\n", hex.EncodeToString(pi))
-		fmt.Printf("vrf: %s\n", hex.EncodeToString(ECVRF_proof2hash(pi)))
+		fmt.Printf("vrf: %s\n", hex.EncodeToString(Hash(pi)))
 
-		r, c, s, err := ECVRF_decode_proof(pi)
+		r, c, s, err := decodeProof(pi)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -211,7 +211,7 @@ func TestECVRFOnce(t *testing.T) {
 	m := []byte(message)
 	DoTestECVRF(t, pk, sk, m, true)
 
-	h := ECVRF_hash_to_curve(m, pk)
+	h := hashToCurve(m, pk)
 	fmt.Printf("h: %s\n", hex.EncodeToString(ECP2OS(h)))
 }
 
@@ -220,7 +220,7 @@ func TestHashToCurve(t *testing.T) {
 	pk, _ := hex.DecodeString(pks)
 	for i := 0; i < 1000; i++ {
 		io.ReadFull(rand.Reader, m[:])
-		P := ECVRF_hash_to_curve(m[:], pk)
+		P := hashToCurve(m[:], pk)
 		// test P on curve by P^order = infinity
 		var infs [32]byte
 		inf := GeScalarMult(P, IP2F(q))
