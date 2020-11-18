@@ -19,6 +19,7 @@ package vrf
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -28,7 +29,6 @@ import (
 
 	ed2 "github.com/yahoo/coname/ed25519/edwards25519"
 	ed1 "github.com/yoseplee/vrf-go/edwards25519"
-	"golang.org/x/crypto/ed25519"
 )
 
 const message = "message"
