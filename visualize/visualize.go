@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"github.com/go-echarts/go-echarts/charts"
-	"github.com/r2ishiguro/vrf/go/vrf_ed25519"
-	"github.com/yoseplee/vrf-go/vrf"
+	"github.com/yoseplee/vrf-go"
+	"github.com/yoseplee/vrf-go/sortition"
 )
 
 func barChartExample(w http.ResponseWriter, _ *http.Request) {
@@ -37,10 +37,11 @@ func loadDataset(amount int) []float64 {
 	var ratios []float64
 	for i := 0; i < amount; i++ {
 		message := sha256.Sum256([]byte(fmt.Sprintf("Hello%d", i)))
-		vrfOutput := vrf_ed25519.ECVRF_hash_to_curve([]byte(message[:]), publicKey)
-		var vrfOutputInBytes [32]byte
-		vrfOutput.ToBytes(&vrfOutputInBytes)
-		got := vrf.GetRatio(vrfOutputInBytes[:])
+		_, vrfOutput, err := vrf.Prove(publicKey, privateKey, message[:])
+		if err != nil {
+			log.Println("incorrect calculation of vrf output:", err)
+		}
+		got := sortition.HashRatio(vrfOutput)
 		ratios = append(ratios, got)
 	}
 	return ratios
@@ -104,7 +105,7 @@ func scatter(data []float64, n int) {
 			"[0.9, 1.0]",
 		}).
 		AddYAxis("Ratio from hash(hash/2^(hashlen))", data)
-	f, err := os.Create(fmt.Sprintf("./visualize/probabilityMass(n=%d).html", n))
+	f, err := os.Create(fmt.Sprintf("./probabilityMass(n=%d).html", n))
 	if err != nil {
 		log.Println(err)
 	}
