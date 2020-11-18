@@ -6,7 +6,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/r2ishiguro/vrf/go/vrf_ed25519"
+	"github.com/yoseplee/vrf-go"
 )
 
 const message string = "this is a message"
@@ -21,13 +21,10 @@ func TestGetRatioFromHash(t *testing.T) {
 
 	privateKey := ed25519.NewKeyFromSeed(givenSeedInBytes)
 	publicKey := privateKey.Public().(ed25519.PublicKey)
-
-	vrfOutput := vrf_ed25519.ECVRF_hash_to_curve([]byte(message), publicKey)
-	var vrfOutputInBytes [32]byte
-	vrfOutput.ToBytes(&vrfOutputInBytes)
-	want := GetRatioFromHash(vrfOutputInBytes[:])
-	if got := 0.5319936922751962; want != got {
-		log.Fatalf("incorrect calculation of ratio. want = %f , but got = %f\n", want, got)
+	_, vrfOutput, err := vrf.Prove(publicKey, privateKey, []byte(message))
+	want := 0.9398921304750247
+	if got := HashRatio(vrfOutput); want != got {
+		log.Fatalf("incorrect calculation of ratio. want = %v , but got = %v\n", want, got)
 	}
 }
 
@@ -38,10 +35,11 @@ func TestSortition(t *testing.T) {
 	for i := 0; i < totalIteration; i++ {
 		publicKey, privateKey, _ := ed25519.GenerateKey(nil)
 		privateKeySlice = append(privateKeySlice, privateKey)
-		vrfOutput := vrf_ed25519.ECVRF_hash_to_curve([]byte(message), publicKey)
-		var vrfOutputInBytes [32]byte
-		vrfOutput.ToBytes(&vrfOutputInBytes)
-		ratio := GetRatioFromHash(vrfOutputInBytes[:])
+		_, vrfOutput, err := vrf.Prove(publicKey, privateKey, []byte(message))
+		if err != nil {
+			log.Fatalf("incorrect calculation of ratio: %v", err)
+		}
+		ratio := HashRatio(vrfOutput)
 		ratioSlice = append(ratioSlice, ratio)
 	}
 
