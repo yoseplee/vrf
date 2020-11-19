@@ -1,4 +1,4 @@
-module github.com/yoseplee/vrf-go
+module github.com/yoseplee/vrf
 
 go 1.13
 
