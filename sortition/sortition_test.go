@@ -6,7 +6,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/yoseplee/vrf-go"
+	"github.com/yoseplee/vrf"
 )
 
 const message string = "this is a message"

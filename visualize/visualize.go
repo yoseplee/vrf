@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"github.com/go-echarts/go-echarts/charts"
-	"github.com/yoseplee/vrf-go"
-	"github.com/yoseplee/vrf-go/sortition"
+	"github.com/yoseplee/vrf"
+	"github.com/yoseplee/vrf/sortition"
 )
 
 func barChartExample(w http.ResponseWriter, _ *http.Request) {

@@ -28,7 +28,7 @@ import (
 	"testing"
 
 	ed2 "github.com/yahoo/coname/ed25519/edwards25519"
-	ed1 "github.com/yoseplee/vrf-go/edwards25519"
+	ed1 "github.com/yoseplee/vrf/edwards25519"
 )
 
 const message = "message"
